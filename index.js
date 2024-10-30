@@ -8,39 +8,47 @@ app.use(cors());
 const PORT = process.env.PORT || 8000;
 
 const urlBase = "https://github.com/newan0805?tab=repositories";
+const dataSet = "https://raw.githubusercontent.com/newan0805/newan0805_bio/refs/heads/main/newan0805_bio.js";
 
-app.get("/", (req, res) => {
-  axios(urlBase)
-    .then((getHtml) => {
-      const html = getHtml.data;
-      const $ = cheerio.load(html);
-      const dataFromGit = [];
-      $(".col-10", html).each(function () {
-        const image =
-          "https://img.icons8.com/clouds/500/000000/motivation-daily-quotes.png";
-        const title = $(this).find("a").text().replace(/\s+/g, " ").trim();
-        const desciption = $(this).find("p").text().replace(/\s+/g, " ").trim();
-        const link = $(this).find("a").attr("href");
+
+app.get("/", async (req, res) => {
+  try {
+    const { data: bioData } = await axios(dataSet);
+    const { data: html } = await axios(urlBase);
+    const $ = cheerio.load(html);
+    const dataFromGit = [];
+
+    $(".col-10").each(function () {
+      const image = bioData.projects.image;
+      const title = $(this).find("a").text().trim().replace(/\s+/g, " ");
+      const description = $(this).find("p").text().trim().replace(/\s+/g, " ");
+      const link = $(this).find("a").attr("href");
+
+      if (title && link) {
         dataFromGit.push({
           image,
-          desciption,
+          description,
           title,
-          link,
+          link: `https://github.com${link}`,
         });
-      });
-      // console.log(dataFromGit);
-      res.json(dataFromGit);
-    })
-    .catch((err) => console.log(err));
+      }
+    });
+
+    res.json(dataFromGit.length ? dataFromGit : { message: "No repositories found." });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({ error: "Failed to fetch data." });
+  }
 });
 
-app.get("/details", (req, res) => {
-  axios('https://raw.githubusercontent.com/newan0805/newan0805_bio/refs/heads/main/newan0805_bio.js')
-    .then((getData) => {
-      // console.log('getdata:', getData.data)
-      res.json(getData?.data);
-    })
-    .catch((err) => console.log(err));
+app.get("/details", async (req, res) => {
+  try {
+    const { data } = await axios(dataSet);
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching details:", error);
+    res.status(500).json({ error: "Failed to fetch details." });
+  }
 });
 
 app.listen(PORT, () => console.log(`Server running on PORT: ${PORT}`));
