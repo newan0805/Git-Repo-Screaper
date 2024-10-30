@@ -34,4 +34,13 @@ app.get("/", (req, res) => {
     .catch((err) => console.log(err));
 });
 
+app.get("/details", (req, res) => {
+  axios('https://raw.githubusercontent.com/newan0805/newan0805_bio/refs/heads/main/newan0805_bio.js')
+    .then((getData) => {
+      // console.log('getdata:', getData.data)
+      res.json(getData?.data);
+    })
+    .catch((err) => console.log(err));
+});
+
 app.listen(PORT, () => console.log(`Server running on PORT: ${PORT}`));
